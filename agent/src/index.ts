@@ -709,6 +709,7 @@ export async function createAgent(
         character,
         // character.plugins are handled when clients are added
         plugins: [
+            borkPlugin,
             bootstrapPlugin,
             getSecret(character, "CONFLUX_CORE_PRIVATE_KEY")
                 ? confluxPlugin
