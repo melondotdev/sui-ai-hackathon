@@ -10,27 +10,26 @@ import {
 
 import fetch from "node-fetch"; // Ensure fetch is available for node environments
 
-const fetchTransactionsFromBlockberry = async (
+export const fetchTransactionsFromBlockberry = async (
   walletAddress: string
 ): Promise<any[]> => {
   const options = {
     method: 'GET',
     headers: { accept: '*/*', 'x-api-key': process.env.BLOCKBERRY_API_KEY },
   };
-
-  // let hasNextPage = true;
+  
+  let hasNextPage = true;
   const transactions = [];
   let nextCursor = null;
 
   // while (hasNextPage) {
     try {
-      // Ensure cursor comes before size in the query parameters
       const url = `https://api.blockberry.one/sui/v1/accounts/${walletAddress}/activity?${
         nextCursor ? `nextCursor=${nextCursor}&` : ''
-      }size=10&orderBy=DESC`;
+      }size=20&orderBy=DESC`;
       
       const response = await fetch(url, options);
-
+      
       if (!response.ok) {
         const text = await response.text();
         throw new Error(`HTTP error ${response.status}: ${text}`);
@@ -40,24 +39,29 @@ const fetchTransactionsFromBlockberry = async (
 
       if (data.content) {
         transactions.push(
-          ...data.content.map((transaction: any) => ({
-            timestamp: new Date(transaction.timestamp).toISOString(),
-            type: transaction.activityType.join(", "),
-            amount: transaction.details.detailsDto.coins.length > 0
-              ? transaction.details.detailsDto.coins[0].amount
-              : null,
-            coinType: transaction.details.detailsDto.coins.length > 0
-              ? transaction.details.detailsDto.coins[0].coinType
-              : null,
-            digest: transaction.digest,
-            status: transaction.txStatus,
-            gasFee: transaction.gasFee,
-          }))
-        );
+          ...data.content.map((transaction: any) => {
+            // Safely optional-chain each property
+            const coinsArray = transaction.details?.detailsDto?.coins || [];
+            const firstCoin = coinsArray.length > 0 ? coinsArray[0] : null;
+            
+            return {
+              timestamp: new Date(transaction.timestamp).toISOString(),
+              type: Array.isArray(transaction.activityType)
+                ? transaction.activityType.join(", ")
+                : String(transaction.activityType ?? "Unknown"),
+              amount: firstCoin ? firstCoin.amount : null,
+              coinType: firstCoin ? firstCoin.coinType : null,
+              digest: transaction.digest,
+              status: transaction.txStatus,
+              gasFee: transaction.gasFee,
+            };
+          })
+        );        
       }
       
-      // hasNextPage = data.hasNextPage;
+      hasNextPage = data.hasNextPage;
       nextCursor = data.nextCursor; // Update the cursor for the next request
+      console.log(hasNextPage, nextCursor);
     } catch (error) {
       console.error("Error fetching transactions from blockchain:", error);
       if (error.message.includes("Too many requests")) {
@@ -66,74 +70,14 @@ const fetchTransactionsFromBlockberry = async (
       // hasNextPage = false; // Stop fetching if an error occurs
     }
   // }
-
+  
   return transactions;
 };
 
-// const fetchTransactionsFromMysten = async (
-//   walletAddress: string
-// ): Promise<any[]> => {
-//   const options = {
-//     method: 'GET',
-//     headers: { accept: '*/*', 'x-api-key': process.env.BLOCKBERRY_API_KEY },
-//   };
-  
-//   let hasNextPage = true;
-//   const transactions = [];
-//   let nextCursor = null;
-
-//   while (hasNextPage) {
-//     try {
-//       // Ensure cursor comes before size in the query parameters
-//       const url = `https://api.blockberry.one/sui/v1/accounts/${walletAddress}/activity?${
-//         nextCursor ? `nextCursor=${nextCursor}&` : ''
-//       }size=2&orderBy=DESC`;
-
-//       const response = await fetch(url, options);
-
-//       if (!response.ok) {
-//         const text = await response.text();
-//         throw new Error(`HTTP error ${response.status}: ${text}`);
-//       }
-
-//       const data = await response.json();
-
-//       if (data.content) {
-//         transactions.push(
-//           ...data.content.map((transaction: any) => ({
-//             timestamp: new Date(transaction.timestamp).toISOString(),
-//             type: transaction.activityType.join(", "),
-//             amount: transaction.details.detailsDto.coins.length > 0
-//               ? transaction.details.detailsDto.coins[0].amount
-//               : null,
-//             coinType: transaction.details.detailsDto.coins.length > 0
-//               ? transaction.details.detailsDto.coins[0].coinType
-//               : null,
-//             digest: transaction.digest,
-//             status: transaction.txStatus,
-//             gasFee: transaction.gasFee,
-//           }))
-//         );
-//       }
-
-//       hasNextPage = data.hasNextPage;
-//       nextCursor = data.nextCursor; // Update the cursor for the next request
-//     } catch (error) {
-//       console.error("Error fetching transactions from blockchain:", error);
-//       if (error.message.includes("Too many requests")) {
-//         throw new Error("Rate limit exceeded. Please try again later.");
-//       }
-//       hasNextPage = false; // Stop fetching if an error occurs
-//     }
-//   }
-
-//   return transactions;
-// };
-
 export default {
   name: "FETCH_WALLET_DATA",
-  similes: ["GET_TRANSACTIONS", "WALLET_TRANSACTIONS", "FETCH_TRANSACTIONS"],
-  description: "Fetches the recent transactions of the user's Sui wallet.",
+  similes: ["GET_DATA", "WALLET_DATA", "FETCH_DATA"],
+  description: "Fetches the recent data of the user's Sui wallet.",
   validate: async (_runtime: IAgentRuntime, _message: Memory) => {
     return true;
   },
@@ -174,38 +118,18 @@ export default {
         return true;
       }
 
-      const formattedTransactions = transactions
-        .map((tx, index) => {
-          const type = tx.type || "Unknown";
-          const amount = tx.amount !== null ? tx.amount : "N/A";
-          const coinType = tx.coinType || "N/A";
-          const gasFee = tx.gasFee || "N/A";
-          const timestamp = tx.timestamp || "N/A";
-          const digest = tx.digest || "N/A";
-          const status = tx.status || "N/A";
-
-          return `#${index + 1}
-  **Type**: ${type}
-  **Amount**: ${amount}
-  **Coin Type**: ${coinType}
-  **Gas Fee**: ${gasFee}
-  **Timestamp**: ${timestamp}
-  **Digest**: ${digest}
-  **Status**: ${status}`;
-        })
-        .join("\n\n");
-
       if (callback) {
+        const formattedTransactions = JSON.stringify(transactions, null, 2); // Pretty-print the JSON
         callback({
           text: `Fetched recent transactions for wallet ${walletAddress}:\n\n${formattedTransactions}`,
           content: { transactions },
         });
-      }
+      }      
 
       return true;
     } catch (error) {
       console.error("Error fetching wallet data:", error);
-
+      
       if (callback) {
         callback({
           text: `Error fetching wallet data: ${error.message}`,
@@ -220,7 +144,7 @@ export default {
     [
       {
         user: "{{user1}}",
-        content: { text: "Fetch transactions for wallet 0x02a212de6a9dfa3a69e22387acfbafbb1a9e591bd9d636e7895dcfc8de05f331." },
+        content: { text: "Fetch data for wallet 0x02a212de6a9dfa3a69e22387acfbafbb1a9e591bd9d636e7895dcfc8de05f331." },
       },
       {
         user: "{{user2}}",
@@ -234,9 +158,44 @@ export default {
         content: {
           text: "Fetched recent transactions successfully.",
           content: {
-            transactions: [
-              { timestamp: "2025-01-01T00:00:00Z", type: "Send", amount: -900.00174788, coinType: "0x2::sui::SUI", digest: "XYZGiNy5hnkxDt7peZ2ywXsazQX7ZAxVKD1BNVbFSmR", status: "SUCCESS", gasFee: 0.00174788 },
-              { timestamp: "2025-01-01T00:01:00Z", type: "Stake", amount: null, coinType: null, digest: "D5mVj1f3TTHizZ9RLVKsCdoRqWwrpn87BGwTPXxsJvNW", status: "SUCCESS", gasFee: 0 }
+            "content": [
+              { 
+                "activityType": ["Deposit", "Stake"], 
+                "details": { 
+                  "type": "OTHER", 
+                  "detailsDto": { 
+                    "coins": [ 
+                      { 
+                        "amount": 900.00174788, 
+                        "coinType": "0x2::sui::SUI" 
+                      } 
+                    ] 
+                  } 
+                }, 
+                "timestamp": 1737743524190
+              },
+              { 
+                "activityType": ["Swap"], 
+                "details": { 
+                  "type": "DEX", 
+                  "detailsDto": { 
+                    "poolId": "0x1de5cc16141c21923bfca33db9bb6c604de5760e4498e75ecdfcf80d62fb5818",
+                    "sender": "0xdc9d3855fb66bb34abcd4c18338bca6c568b7beaf3870c5dd3f9d3441c2cf11d",
+                    "securityMessage": null,
+                    "txHash": "Ck9eXMhMuoFigsgnbqL3CgWs8PnDw1CE6iuZiW2yt32M", 
+                    "coins": [
+                      {
+                        "amount": -4095.527057723,
+                        "coinType": "0xea65bb5a79ff34ca83e2995f9ff6edd0887b08da9b45bf2e31f930d3efb82866::s::S"
+                      }, {
+                        "amount": 9.313302043,
+                        "coinType": "0x2::sui::SUI"
+                      } 
+                    ] 
+                  } 
+                }, 
+                "timestamp": 1737743524190
+              },
             ],
           },
         },
