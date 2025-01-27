@@ -59,20 +59,16 @@ const fetcher = async ({
 };
 
 export const apiClient = {
-    analyzeWallet: (
-        agentId: string,
-        walletAddress: string
-    ) => {
+    sendMessage: (agentId: string, userMessage: string) => {
         const formData = new FormData();
-        formData.append("text", walletAddress);
+        formData.append("text", userMessage);
         formData.append("user", "user");
-
         return fetcher({
-            url: `/${agentId}/message`,
-            method: "POST",
-            body: formData,
+          url: `/${agentId}/message`,
+          method: "POST",
+          body: formData,
         });
-    },
+      },
     getAgents: () => fetcher({ url: "/agents" }),
     getAgent: (agentId: string): Promise<{ id: UUID; character: Character }> =>
         fetcher({ url: `/agents/${agentId}` }),
