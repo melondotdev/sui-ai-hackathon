@@ -1,81 +1,81 @@
 import {
-  ActionExample,
-  HandlerCallback,
   IAgentRuntime,
-  Memory,
-  State,
   elizaLogger,
-  type Action,
+  type HandlerCallback,
+  type ActionExample,
 } from "@elizaos/core";
+import fetch from "node-fetch";
 
-import fetch from "node-fetch"; // Ensure fetch is available for node environments
-
-/********************************
- * 1) Define a helper function  *
- ********************************/
-function transformBlockberryData(data: any): any[] {
+function transformBlockberryData(data: any): string[] {
   if (!data?.content) return [];
 
-  // Filter only SUCCESS transactions and remove icons, iconUrl, projectImg, poolCoins, isIndexed, securityMessage, gasFee, AND remove all package info
-  // Keep only: activityType, details (type, coins), timestamp, digest, txStatus
-  return data.content
-    .filter((item: any) => item.txStatus === "SUCCESS")
-    .map((item: any) => {
-      return {
-        activityType: item.activityType,
-        details: {
-          coins: (item.details?.detailsDto?.coins ?? []).map((coin: any) => ({
-            amount: coin.amount,
-            coinType: coin.coinType,
-            symbol: coin.symbol,
-          })),
-        },
-        timestamp: item.timestamp
-      };
+  const filtered = data.content.filter((item: any) => item.txStatus === "SUCCESS");
+  
+  return filtered.map((tx: any) => {
+    const activity = Array.isArray(tx.activityType)
+      ? tx.activityType.join(",")
+      : tx.activityType;
+
+    const timestamp = tx.timestamp;
+
+    // Collect coin changes
+    const coins = (tx.details?.detailsDto?.coins ?? []).map((coin: any) => {
+      const amt = coin.amount;
+      const symbol = coin.symbol || "???";
+      return `${amt >= 0 ? "+" : ""}${amt} ${symbol}`;
     });
+    
+    const coinPart = coins.length ? `(${coins.join(", ")})` : "(no coins)";
+
+    return `${activity} | ${timestamp} | ${coinPart}`;
+  });
 }
 
-/*************************************************
- * 2) Use transformBlockberryData in the fetcher *
- *************************************************/
-
-function sleep(ms: number): Promise<void> {
+async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const fetchTransactionsFromBlockberry = async (
-  walletAddress: string
-): Promise<any[]> => {
+async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<any[]> {
   const options = {
     method: "GET",
-    headers: { 
-      accept: "*/*", 
-      "x-api-key": process.env.BLOCKBERRY_API_KEY ?? "" 
+    headers: {
+      accept: "*/*",
+      "x-api-key": process.env.BLOCKBERRY_API_KEY ?? "",
     },
   };
-  
+
   let hasNextPage = true;
   const transactions: any[] = [];
   let nextCursor: string | null = null;
 
-  // Limit the max pages or keep infinite while if desired
+  let consecutive429Count = 0;
+  const MAX_429_RETRIES = 5;
+
   while (hasNextPage) {
-    // Construct the URL each iteration
     const url = `https://api.blockberry.one/sui/v1/accounts/${walletAddress}/activity?${
       nextCursor ? `nextCursor=${nextCursor}&` : ""
-    }size=20&orderBy=DESC`;
+    }size=10&orderBy=DESC`;
 
     console.log("Fetching URL:", url);
-    
+
     try {
       const response = await fetch(url, options);
 
-      // If there's a 429 error, handle it gracefully with a delay
       if (response.status === 429) {
-        console.warn("HTTP 429: Too many requests. Backing off...");
-        // Back off for 3 seconds (adjust as needed) and then continue
-        await sleep(3000);
-        continue; // or break; depending on your approach
+        consecutive429Count++;
+        // Check if we've retried enough times
+        if (consecutive429Count >= MAX_429_RETRIES) {
+          console.error("Too many 429s in a row. Stopping requests.");
+          break;
+        }
+        // Exponential backoff: 3s -> 6s -> 12s -> ...
+        const waitMs = 3000 * 2 ** (consecutive429Count - 1);
+        console.warn(`HTTP 429: Too many requests. Waiting ${waitMs}ms...`);
+        await sleep(waitMs);
+        continue;
+      } else {
+        // Reset counter if not a 429
+        consecutive429Count = 0;
       }
 
       if (!response.ok) {
@@ -91,16 +91,11 @@ const fetchTransactionsFromBlockberry = async (
       hasNextPage = data.hasNextPage;
       nextCursor = data.nextCursor;
 
-      console.log(
-        "Fetched batch. hasNextPage:",
-        hasNextPage,
-        "nextCursor:",
-        nextCursor
-      );
+      console.log("Fetched batch. hasNextPage:", hasNextPage, "nextCursor:", nextCursor);
 
-      // Add a short delay to avoid hammering the API
       if (hasNextPage) {
-        await sleep(1500); // 1.5 second delay between calls
+        // You may also lengthen this to ~2-5s to reduce rate-limit hits
+        await sleep(2000);
       }
     } catch (error: any) {
       console.error("Error fetching transactions from blockchain:", error);
@@ -108,56 +103,56 @@ const fetchTransactionsFromBlockberry = async (
       // If the error text includes "Too many requests", do a longer delay or stop
       if (typeof error.message === "string" && error.message.includes("Too many requests")) {
         console.error("Rate limit exceeded. Stopping further requests.");
-        // You can either break out of the loop or continue with a longer sleep
         break;
       }
-      // Decide whether to break or keep trying:
-      // break;
-      // or set hasNextPage = false if you want to stop on error
       hasNextPage = false;
     }
   }
 
   return transactions;
-};
+}
 
-/****************************************************************
- * 3) The Action that uses the above function
- ****************************************************************/
+/**
+ * A simplified Action that does NOT require Memory or State
+ */
 export default {
   name: "FETCH_WALLET_DATA",
   similes: ["GET_DATA", "WALLET_DATA", "FETCH_DATA"],
-  description: "Fetches the recent data of the user's Sui wallet.",
-  validate: async (_runtime: IAgentRuntime, _message: Memory) => {
+  description: "Fetches the recent data of the user's Sui wallet without using Memory or State.",
+  validate: async (_runtime: IAgentRuntime, _message: any) => {
+    // We can simply return true, or do a minimal check if you like.
     return true;
   },
   handler: async (
     runtime: IAgentRuntime,
-    message: Memory,
-    state: State,
+    message: any, // changed from Memory
+    _unused: any, // ignoring State
     _options: { [key: string]: unknown },
     callback?: HandlerCallback
   ): Promise<boolean> => {
-    elizaLogger.log("Starting FETCH_WALLET_DATA handler...");
+    elizaLogger.log("Starting FETCH_WALLET_DATA (no Memory/State) handler...");
 
     try {
+      // 1) Extract wallet address via regex from message.content.text
       const walletAddressMatch =
-        message.content.text?.match(/0x[a-fA-F0-9]{64}/);
+        message?.content?.text?.match(/0x[a-fA-F0-9]{64}/);
       const walletAddress =
-        walletAddressMatch?.[0] || runtime.getSetting("WALLET_ADDRESS");
+        walletAddressMatch?.[0] || process.env.DEFAULT_WALLET_ADDRESS; // fallback
 
       if (!walletAddress) {
-        elizaLogger.error("Wallet address not provided or configured.");
+        elizaLogger.error("No wallet address found.");
         if (callback) {
           callback({
-            text: "I couldn't find a wallet address in your request. Please provide a valid 32-byte Sui address (e.g., 0x...) in your message.",
-            content: { error: "No wallet address" },
+            text: "No valid wallet address found in request.",
+            content: { error: "Missing wallet address" },
           });
         }
         return false;
       }
 
       elizaLogger.log(`Using wallet address: ${walletAddress}`);
+
+      // 2) Fetch transaction data
       const transactions = await fetchTransactionsFromBlockberry(walletAddress);
 
       if (transactions.length === 0) {
@@ -170,8 +165,9 @@ export default {
         return true;
       }
 
+      // 3) Return final result
       if (callback) {
-        const formattedTransactions = JSON.stringify(transactions, null, 2); // Pretty-print the JSON
+        const formattedTransactions = JSON.stringify(transactions, null, 2);
         callback({
           text: `Fetched recent (SUCCESS) transactions for wallet ${walletAddress}:\n\n${formattedTransactions}`,
           content: { transactions },
@@ -188,7 +184,6 @@ export default {
           content: { error: error.message },
         });
       }
-
       return false;
     }
   },
@@ -212,52 +207,13 @@ export default {
         content: {
           text: "Fetched recent transactions successfully.",
           content: {
-            content: [
-              {
-                activityType: ["Deposit", "Stake"],
-                details: {
-                  type: "OTHER",
-                  detailsDto: {
-                    coins: [
-                      {
-                        amount: 900.00174788,
-                        coinType: "0x2::sui::SUI",
-                      },
-                    ],
-                  },
-                },
-                timestamp: 1737743524190,
-              },
-              {
-                activityType: ["Swap"],
-                details: {
-                  type: "DEX",
-                  detailsDto: {
-                    poolId:
-                      "0x1de5cc16141c21923bfca33db9bb6c604de5760e4498e75ecdfcf80d62fb5818",
-                    sender:
-                      "0xdc9d3855fb66bb34abcd4c18338bca6c568b7beaf3870c5dd3f9d3441c2cf11d",
-                    securityMessage: null,
-                    txHash: "Ck9eXMhMuoFigsgnbqL3CgWs8PnDw1CE6iuZiW2yt32M",
-                    coins: [
-                      {
-                        amount: -4095.527057723,
-                        coinType:
-                          "0xea65bb5a79ff34ca83e2995f9ff6edd0887b08da9b45bf2e31f930d3efb82866::s::S",
-                      },
-                      {
-                        amount: 9.313302043,
-                        coinType: "0x2::sui::SUI",
-                      },
-                    ],
-                  },
-                },
-                timestamp: 1737743524190,
-              },
+            transactions: [
+              "Deposit,Stake | 1737743524190 | (+900.00174788 SUI)",
+              "Swap | 1737743524190 | (-4095.527057723 S, +9.313302043 SUI)",
             ],
           },
         },
       },
     ],
   ] as ActionExample[][],
-} as Action;
+};

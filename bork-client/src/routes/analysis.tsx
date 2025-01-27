@@ -14,40 +14,38 @@ export default function Analysis() {
   // Prevent multiple fetches per wallet address
   const [hasFetched, setHasFetched] = useState(false);
 
-  // Bork’s introduction text from the first response
-  const [borkIntro, setBorkIntro] = useState<string>("");
+  // Bork’s introduction from the first response
+  const [borkIntro, setBorkIntro] = useState("");
 
   // The full analysis from the first call
   const [analysis, setAnalysis] = useState<WalletAnalysis | null>(null);
 
-  // The roast from the second call
+  // The roast from the second call (triggered by a button)
   const [roastResponse, setRoastResponse] = useState<any>(null);
 
-  // Loading / error states
+  // Loading / error
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ---------------------------
-  // 1) FIRST EFFECT:
-  // Fetch the wallet data (and Bork intro) exactly once.
+  // 1) FIRST EFFECT: FETCH DATA
   // ---------------------------
   useEffect(() => {
-    // If there's no walletAddress, or we've already fetched, do nothing.
     if (!walletAddress || hasFetched) return;
 
-    setHasFetched(true);  // Mark that we've started a fetch
+    setHasFetched(true);
     setLoading(true);
     setError(null);
 
     (async () => {
       try {
-        // 1) FIRST CALL: fetch wallet data & Bork’s intro
+        // First API call: fetch wallet data & Bork intro
         const response = await apiClient.sendMessage(
           "7e8bb798-a9e2-03e2-86aa-e0f9a8ae5baf",
           `fetch wallet data from ${walletAddress}`
         );
 
-        // Extract Bork’s intro text
+        // Extract Bork’s intro text if available
         if (Array.isArray(response) && response[0]?.text) {
           setBorkIntro(response[0].text);
         }
@@ -63,38 +61,32 @@ export default function Analysis() {
   }, [walletAddress, hasFetched]);
 
   // ---------------------------
-  // 2) SECOND EFFECT:
-  // Run the "roast" call only after we have an `analysis`.
+  // 2) SECOND API CALL: ON BUTTON CLICK
   // ---------------------------
-  useEffect(() => {
-    // If analysis is null, we haven't fetched anything yet
-    // or we had an error. Also skip if there's no walletAddress.
-    if (!analysis || !walletAddress) return;
+  async function handleRoastClick() {
+    try {
+      setLoading(true);
+      setError(null);
 
-    // Optionally setLoading(true) again if you want a spinner during the roast fetch:
-    // setLoading(true);
+      const roast = await apiClient.sendMessage(
+        "7e8bb798-a9e2-03e2-86aa-e0f9a8ae5baf",
+        `post a detailed summary of the wallet data and roast the owner in comedic style.\n\n${JSON.stringify(
+          analysis,
+          null,
+          2
+        )}`
+      );
 
-    (async () => {
-      try {
-        const roast = await apiClient.sendMessage(
-          "7e8bb798-a9e2-03e2-86aa-e0f9a8ae5baf",
-          `post a detailed summary of the wallet data and roast the owner of this wallet in comedic style.\n\n${JSON.stringify(
-            analysis,
-            null,
-            2
-          )}`
-        );
-        setRoastResponse(roast);
-      } catch (err: any) {
-        console.error("Roast failed:", err);
-        setError(err.message || "Unknown error");
-      } finally {
-        // setLoading(false);
-      }
-    })();
-  }, [analysis, walletAddress]);
+      setRoastResponse(roast);
+    } catch (err: any) {
+      console.error("Roast failed:", err);
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  // Error UI
+  // ERROR UI
   if (error) {
     return (
       <div className="container mx-auto p-4">
@@ -110,9 +102,9 @@ export default function Analysis() {
     );
   }
 
-  // Loading UI: If you prefer to show loading only for the first call,
-  // keep it simple:
-  if (loading) {
+  // LOADING UI
+  if (loading && !analysis) {
+    // Show spinner only while fetching the first call (no analysis yet)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
         {borkIntro && (
@@ -128,19 +120,49 @@ export default function Analysis() {
     );
   }
 
-  // Main UI once we have data
+  // MAIN UI (once the first data is loaded)
   return (
     <div className="container mx-auto p-4 space-y-4">
+
+      {/* Wallet Analysis Card */}
       <Card>
         <CardHeader>
           <CardTitle>Wallet Analysis</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Wallet: {walletAddress}</p>
+          <p className="text-sm text-muted-foreground">
+            Wallet: {walletAddress}
+          </p>
+
+          {/* If the first response had a Bork intro, display it */}
+          {borkIntro && (
+            <div className="mt-4">
+              <p className="font-semibold">Bork Intro</p>
+              <p>{borkIntro}</p>
+            </div>
+          )}
+
+          {/* If we have analysis, show a button to “Roast” */}
+          {analysis && !roastResponse && (
+            <button
+              onClick={handleRoastClick}
+              className="mt-6 inline-flex items-center px-4 py-2 text-sm font-medium rounded bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Roast the Owner
+            </button>
+          )}
         </CardContent>
       </Card>
 
-      {/* Bork’s Roast */}
+      {/* Optionally show a spinner while the roast is happening */}
+      {loading && analysis && !roastResponse && (
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin mb-2" />
+          <p className="text-lg">Cooking up a roast...</p>
+        </div>
+      )}
+
+      {/* If we have a roast, show it */}
       {roastResponse && (
         <Card>
           <CardHeader>
