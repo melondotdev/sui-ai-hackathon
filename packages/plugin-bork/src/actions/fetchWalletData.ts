@@ -9,8 +9,21 @@ import fetch from "node-fetch";
 function transformBlockberryData(data: any): string[] {
   if (!data?.content) return [];
 
-  const filtered = data.content.filter((item: any) => item.txStatus === "SUCCESS");
-  
+  // Filter out transactions that are not "SUCCESS" or lack coins and NFT data
+  const filtered = data.content.filter((tx: any) => {
+    if (tx.txStatus !== "SUCCESS") {
+      return false;
+    }
+
+    const hasCoins = (tx.details?.detailsDto?.coins?.length ?? 0) > 0;
+    const isNFT =
+      tx.details?.type === "NFT" && !!tx.details?.detailsDto?.nftType;
+
+    // Keep the transaction if it has coins OR is an NFT
+    return hasCoins || isNFT;
+  });
+
+  // Map each remaining transaction to a formatted string
   return filtered.map((tx: any) => {
     const activity = Array.isArray(tx.activityType)
       ? tx.activityType.join(",")
@@ -18,16 +31,23 @@ function transformBlockberryData(data: any): string[] {
 
     const timestamp = tx.timestamp;
 
-    // Collect coin changes
-    const coins = (tx.details?.detailsDto?.coins ?? []).map((coin: any) => {
+    // Handle NFT data (prioritized over coins)
+    if (tx.details?.type === "NFT" && tx.details?.detailsDto?.nftType) {
+      const nftType = tx.details.detailsDto.nftType;
+      const price = tx.details.detailsDto.price != null
+        ? ` | Price: ${tx.details.detailsDto.price}`
+        : "";
+      return `${activity} | ${timestamp} | NFT: ${nftType}${price}`;
+    }
+
+    // Handle coin data (if no NFT data exists)
+    const coinArray = (tx.details?.detailsDto?.coins ?? []).map((coin: any) => {
       const amt = coin.amount;
       const symbol = coin.symbol || "???";
       return `${amt >= 0 ? "+" : ""}${amt} ${symbol}`;
     });
-    
-    const coinPart = coins.length ? `(${coins.join(", ")})` : "(no coins)";
-
-    return `${activity} | ${timestamp} | ${coinPart}`;
+    const coinsPart = coinArray.length ? coinArray.join(", ") : "(no coins)";
+    return `${activity} | ${timestamp} | ${coinsPart}`;
   });
 }
 
@@ -94,8 +114,7 @@ async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<a
       console.log("Fetched batch. hasNextPage:", hasNextPage, "nextCursor:", nextCursor);
 
       if (hasNextPage) {
-        // You may also lengthen this to ~2-5s to reduce rate-limit hits
-        await sleep(2000);
+        await sleep(1500);
       }
     } catch (error: any) {
       console.error("Error fetching transactions from blockchain:", error);
