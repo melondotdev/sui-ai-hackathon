@@ -6,31 +6,54 @@ import {
 } from "@elizaos/core";
 import fetch from "node-fetch";
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchTokenPrices(uniqueTokens: string[]): Promise<Record<string, number>> {
+  if (uniqueTokens.length === 0) return {};
+  
+  const url = `https://api.dexscreener.com/tokens/v1/sui/${uniqueTokens.join(",")}`;
+  console.log("Fetching token prices from:", url);
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Error fetching token prices: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const prices: Record<string, number> = {};
+
+    (data ?? []).forEach((entry: any) => {
+      if (entry?.priceUsd) {
+        prices[entry.baseToken.address] = parseFloat(entry.priceUsd);
+      }
+    });
+
+    return prices;
+  } catch (error) {
+    console.error("Error fetching token prices:", error);
+    return {};
+  }
+}
+
 function transformBlockberryData(data: any): any[] {
   if (!data?.content) return [];
 
-  // Filter out transactions that are not "SUCCESS" or lack coins and NFT data
   const filtered = data.content.filter((tx: any) => {
-    if (tx.txStatus !== "SUCCESS") {
-      return false;
-    }
+    if (tx.txStatus !== "SUCCESS") return false;
 
     const hasCoins = (tx.details?.detailsDto?.coins?.length ?? 0) > 0;
-    const isNFT =
-      tx.details?.type === "NFT" && !!tx.details?.detailsDto?.nftType;
+    const isNFT = tx.details?.type === "NFT" && !!tx.details?.detailsDto?.nftType;
 
     return hasCoins || isNFT;
   });
 
-  // Transform transactions into the required JSON format
   return filtered.map((tx: any) => {
-    const activity = Array.isArray(tx.activityType)
-      ? tx.activityType
-      : [tx.activityType];
-
+    const activity = Array.isArray(tx.activityType) ? tx.activityType : [tx.activityType];
     const timestamp = tx.timestamp;
 
-    // Handle NFT data (prioritized over coins)
     if (tx.details?.type === "NFT" && tx.details?.detailsDto?.nftType) {
       return {
         type: activity,
@@ -40,17 +63,16 @@ function transformBlockberryData(data: any): any[] {
       };
     }
 
-    // Handle coin data (if no NFT data exists)
     const coinTypes: string[] = [];
     const amounts: number[] = [];
 
     (tx.details?.detailsDto?.coins ?? []).forEach((coin: any) => {
-      if (coin && coin.coinType && coin.amount !== undefined) {
+      if (coin?.coinType && coin.amount !== undefined) {
         coinTypes.push(coin.coinType);
         amounts.push(coin.amount);
       }
     });
-    
+
     return {
       type: activity,
       timestamp: timestamp,
@@ -58,10 +80,6 @@ function transformBlockberryData(data: any): any[] {
       amount: amounts.length ? amounts : [0],
     };
   });
-}
-
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<any[]> {
@@ -76,7 +94,6 @@ async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<a
   let hasNextPage = true;
   const transactions: any[] = [];
   let nextCursor: string | null = null;
-
   let consecutive429Count = 0;
   const MAX_429_RETRIES = 5;
 
@@ -92,18 +109,15 @@ async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<a
 
       if (response.status === 429) {
         consecutive429Count++;
-        // Check if we've retried enough times
         if (consecutive429Count >= MAX_429_RETRIES) {
           console.error("Too many 429s in a row. Stopping requests.");
           break;
         }
-        // Exponential backoff: 3s -> 6s -> 12s -> ...
         const waitMs = 3000 * 2 ** (consecutive429Count - 1);
         console.warn(`HTTP 429: Too many requests. Waiting ${waitMs}ms...`);
         await sleep(waitMs);
         continue;
       } else {
-        // Reset counter if not a 429
         consecutive429Count = 0;
       }
 
@@ -127,12 +141,6 @@ async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<a
       }
     } catch (error: any) {
       console.error("Error fetching transactions from blockchain:", error);
-
-      // If the error text includes "Too many requests", do a longer delay or stop
-      if (typeof error.message === "string" && error.message.includes("Too many requests")) {
-        console.error("Rate limit exceeded. Stopping further requests.");
-        break;
-      }
       hasNextPage = false;
     }
   }
@@ -140,64 +148,59 @@ async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<a
   return transactions;
 }
 
-/**
- * A simplified Action that does NOT require Memory or State
- */
 export default {
   name: "FETCH_WALLET_DATA",
   similes: ["GET_DATA", "WALLET_DATA", "FETCH_DATA"],
-  description: "Fetches the recent data of the user's Sui wallet without using Memory or State and returns it as a simplified json.",
-  validate: async (_runtime: IAgentRuntime, _message: any) => {
-    // We can simply return true, or do a minimal check if you like.
-    return true;
-  },
+  description: "Fetches recent Sui wallet transactions along with token prices.",
+  validate: async (_runtime: IAgentRuntime, _message: any) => true,
   handler: async (
     runtime: IAgentRuntime,
-    message: any, // changed from Memory
-    _unused: any, // ignoring State
+    message: any,
+    _unused: any,
     _options: { [key: string]: unknown },
     callback?: HandlerCallback
   ): Promise<boolean> => {
-    elizaLogger.log("Starting FETCH_WALLET_DATA (no Memory/State) handler...");
+    elizaLogger.log("Starting FETCH_WALLET_DATA (with token prices)...");
 
     try {
-      // 1) Extract wallet address via regex from message.content.text
-      const walletAddressMatch =
-        message?.content?.text?.match(/0x[a-fA-F0-9]{64}/);
-      const walletAddress =
-        walletAddressMatch?.[0] || process.env.DEFAULT_WALLET_ADDRESS; // fallback
-      
+      const walletAddressMatch = message?.content?.text?.match(/0x[a-fA-F0-9]{64}/);
+      const walletAddress = walletAddressMatch?.[0] || process.env.DEFAULT_WALLET_ADDRESS;
+
       if (!walletAddress) {
         elizaLogger.error("No wallet address found.");
-        if (callback) {
-          callback({
-            text: "No valid wallet address found in request.",
-            content: { error: "Missing wallet address" },
-          });
-        }
+        callback?.({ text: "No valid wallet address found.", content: { error: "Missing wallet address" } });
         return false;
       }
 
       elizaLogger.log(`Using wallet address: ${walletAddress}`);
 
-      // 2) Fetch transaction data
-      const transactions = await fetchTransactionsFromBlockberry(walletAddress);
+      const [transactions] = await Promise.all([fetchTransactionsFromBlockberry(walletAddress)]);
 
       if (transactions.length === 0) {
-        if (callback) {
-          callback({
-            text: `No recent SUCCESS transactions found for wallet ${walletAddress}.`,
-            content: { transactions: [] },
-          });
-        }
+        callback?.({
+          text: `No recent transactions found for wallet ${walletAddress}.`,
+          content: { transactions: [] },
+        });
         return true;
       }
 
-      // 3) Return final result
+      // Extract unique tokens for price fetching
+      const uniqueTokens = Array.from(
+        new Set(transactions.flatMap((tx) => tx.coinType).filter((token) => token !== "UNKNOWN"))
+      );
+
+      // Fetch token prices
+      const tokenPrices = await fetchTokenPrices(uniqueTokens);
+
+      // Attach token prices to transactions
+      transactions.forEach((tx) => {
+        tx.prices = tx.coinType.map((token) => tokenPrices[token] || "N/A");
+      });
+
       if (callback) {
         const formattedTransactions = JSON.stringify(transactions, null, 2);
         callback({
-          text: `Fetched recent (SUCCESS) transactions for wallet ${walletAddress} as a json:\n\n${formattedTransactions}`,
+          text: `Fetched transactions and token prices for wallet ${walletAddress}:\n\n${formattedTransactions}`,
           content: { transactions },
         });
       }
@@ -205,16 +208,11 @@ export default {
       return true;
     } catch (error: any) {
       console.error("Error fetching wallet data:", error);
-
-      if (callback) {
-        callback({
-          text: `Error fetching wallet data: ${error.message}`,
-          content: { error: error.message },
-        });
-      }
+      callback?.({ text: `Error fetching wallet data: ${error.message}`, content: { error: error.message } });
       return false;
     }
   },
+
   examples: [
     [
       {
@@ -226,42 +224,71 @@ export default {
       {
         user: "{{user2}}",
         content: {
-          text: "Fetching the 10 most recent transactions for your wallet...",
+          text: "Fetching the 10 most recent transactions and token prices for your wallet...",
           action: "FETCH_WALLET_DATA",
         },
       },
       {
         user: "{{user2}}",
         content: {
-          text: "Fetched recent transactions successfully.",
+          text: "Fetched recent transactions and token prices successfully.",
           content: {
             transactions: [
               {
-                "type": [
-                  "Deposit",
-                  "Stake"
-                ],
-                "timestamp": 1737743524190,
-                "coinType": [
-                  "0x2::sui::SUI"
-                ],
-                "amount": [
-                  900.00174788
-                ],
+                type: ["Deposit", "Stake"],
+                timestamp: 1737743524190,
+                coinType: ["0x2::sui::SUI"],
+                amount: [900.00174788],
+                prices: [1.23], // Example price in USD
               },
               {
-                "type": [
-                  "Swap"
-                ],
-                "timestamp": 1737743524190,
-                "coinType": [
+                type: ["Swap"],
+                timestamp: 1737743524190,
+                coinType: [
                   "0xea65bb5a79ff34ca83e2995f9ff6edd0887b08da9b45bf2e31f930d3efb82866::s::S",
-                  "0x2::sui::SUI"
+                  "0x2::sui::SUI",
                 ],
-                "amount": [
-                  -4095.527057723,
-                  9.313302043
-                ],
+                amount: [-4095.527057723, 9.313302043],
+                prices: [0.045, 1.23], // Example prices in USD
+              },
+            ],
+          },
+        },
+      },
+    ],
+    [
+      {
+        user: "{{user1}}",
+        content: {
+          text: "Get wallet transactions and token prices for 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.",
+        },
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "Fetching wallet data...",
+          action: "FETCH_WALLET_DATA",
+        },
+      },
+      {
+        user: "{{user2}}",
+        content: {
+          text: "Fetched transactions and token prices.",
+          content: {
+            transactions: [
+              {
+                type: ["Transfer"],
+                timestamp: 1737743524190,
+                coinType: ["0x3::token::TOKEN_X"],
+                amount: [150.5],
+                prices: [0.98], // Example price in USD
+              },
+              {
+                type: ["Mint"],
+                timestamp: 1737743524190,
+                coinType: ["0x4::token::NFT_Y"],
+                amount: [1],
+                prices: ["N/A"], // No price available for NFT
               },
             ],
           },
