@@ -6,7 +6,7 @@ import {
 } from "@elizaos/core";
 import fetch from "node-fetch";
 
-function transformBlockberryData(data: any): string[] {
+function transformBlockberryData(data: any): any[] {
   if (!data?.content) return [];
 
   // Filter out transactions that are not "SUCCESS" or lack coins and NFT data
@@ -19,35 +19,44 @@ function transformBlockberryData(data: any): string[] {
     const isNFT =
       tx.details?.type === "NFT" && !!tx.details?.detailsDto?.nftType;
 
-    // Keep the transaction if it has coins OR is an NFT
     return hasCoins || isNFT;
   });
 
-  // Map each remaining transaction to a formatted string
+  // Transform transactions into the required JSON format
   return filtered.map((tx: any) => {
     const activity = Array.isArray(tx.activityType)
-      ? tx.activityType.join(",")
-      : tx.activityType;
+      ? tx.activityType
+      : [tx.activityType];
 
     const timestamp = tx.timestamp;
 
     // Handle NFT data (prioritized over coins)
     if (tx.details?.type === "NFT" && tx.details?.detailsDto?.nftType) {
-      const nftType = tx.details.detailsDto.nftType;
-      const price = tx.details.detailsDto.price != null
-        ? ` | Price: ${tx.details.detailsDto.price}`
-        : "";
-      return `${activity} | ${timestamp} | NFT: ${nftType}${price}`;
+      return {
+        type: activity,
+        timestamp: timestamp,
+        coinType: [tx.details.detailsDto.nftType],
+        amount: [tx.details.detailsDto.price ?? 0],
+      };
     }
 
     // Handle coin data (if no NFT data exists)
-    const coinArray = (tx.details?.detailsDto?.coins ?? []).map((coin: any) => {
-      const amt = coin.amount;
-      const symbol = coin.symbol || "???";
-      return `${amt >= 0 ? "+" : ""}${amt} ${symbol}`;
+    const coinTypes: string[] = [];
+    const amounts: number[] = [];
+
+    (tx.details?.detailsDto?.coins ?? []).forEach((coin: any) => {
+      if (coin && coin.coinType && coin.amount !== undefined) {
+        coinTypes.push(coin.coinType);
+        amounts.push(coin.amount);
+      }
     });
-    const coinsPart = coinArray.length ? coinArray.join(", ") : "(no coins)";
-    return `${activity} | ${timestamp} | ${coinsPart}`;
+    
+    return {
+      type: activity,
+      timestamp: timestamp,
+      coinType: coinTypes.length ? coinTypes : ["UNKNOWN"],
+      amount: amounts.length ? amounts : [0],
+    };
   });
 }
 
@@ -137,7 +146,7 @@ async function fetchTransactionsFromBlockberry(walletAddress: string): Promise<a
 export default {
   name: "FETCH_WALLET_DATA",
   similes: ["GET_DATA", "WALLET_DATA", "FETCH_DATA"],
-  description: "Fetches the recent data of the user's Sui wallet without using Memory or State.",
+  description: "Fetches the recent data of the user's Sui wallet without using Memory or State and returns it as a simplified json.",
   validate: async (_runtime: IAgentRuntime, _message: any) => {
     // We can simply return true, or do a minimal check if you like.
     return true;
@@ -157,7 +166,7 @@ export default {
         message?.content?.text?.match(/0x[a-fA-F0-9]{64}/);
       const walletAddress =
         walletAddressMatch?.[0] || process.env.DEFAULT_WALLET_ADDRESS; // fallback
-
+      
       if (!walletAddress) {
         elizaLogger.error("No wallet address found.");
         if (callback) {
@@ -188,7 +197,7 @@ export default {
       if (callback) {
         const formattedTransactions = JSON.stringify(transactions, null, 2);
         callback({
-          text: `Fetched recent (SUCCESS) transactions for wallet ${walletAddress}:\n\n${formattedTransactions}`,
+          text: `Fetched recent (SUCCESS) transactions for wallet ${walletAddress} as a json:\n\n${formattedTransactions}`,
           content: { transactions },
         });
       }
@@ -227,8 +236,33 @@ export default {
           text: "Fetched recent transactions successfully.",
           content: {
             transactions: [
-              "Deposit,Stake | 1737743524190 | (+900.00174788 SUI)",
-              "Swap | 1737743524190 | (-4095.527057723 S, +9.313302043 SUI)",
+              {
+                "type": [
+                  "Deposit",
+                  "Stake"
+                ],
+                "timestamp": 1737743524190,
+                "coinType": [
+                  "0x2::sui::SUI"
+                ],
+                "amount": [
+                  900.00174788
+                ],
+              },
+              {
+                "type": [
+                  "Swap"
+                ],
+                "timestamp": 1737743524190,
+                "coinType": [
+                  "0xea65bb5a79ff34ca83e2995f9ff6edd0887b08da9b45bf2e31f930d3efb82866::s::S",
+                  "0x2::sui::SUI"
+                ],
+                "amount": [
+                  -4095.527057723,
+                  9.313302043
+                ],
+              },
             ],
           },
         },
