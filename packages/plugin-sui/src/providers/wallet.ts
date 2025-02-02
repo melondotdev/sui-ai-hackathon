@@ -92,7 +92,7 @@ export class WalletProvider {
                 const response = await fetch(
                     `https://api.dexscreener.com/latest/dex/pairs/sui/${cetusSuiUsdcPoolAddr}`
                 );
-
+                
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(

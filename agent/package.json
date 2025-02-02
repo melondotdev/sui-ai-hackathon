@@ -65,6 +65,7 @@
         "@elizaos/plugin-giphy": "workspace:*",
         "@elizaos/plugin-ton": "workspace:*",
         "@elizaos/plugin-sui": "workspace:*",
+        "@elizaos/plugin-bork": "workspace:*",
         "@elizaos/plugin-sgx": "workspace:*",
         "@elizaos/plugin-tee": "workspace:*",
         "@elizaos/plugin-tee-log": "workspace:*",

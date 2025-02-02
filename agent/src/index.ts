@@ -39,7 +39,6 @@ import { zgPlugin } from "@elizaos/plugin-0g";
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 import createGoatPlugin from "@elizaos/plugin-goat";
 // import { intifacePlugin } from "@elizaos/plugin-intiface";
-import { DirectClient } from "@elizaos/client-direct";
 import { ThreeDGenerationPlugin } from "@elizaos/plugin-3d-generation";
 import { abstractPlugin } from "@elizaos/plugin-abstract";
 import { alloraPlugin } from "@elizaos/plugin-allora";
@@ -79,6 +78,7 @@ import { solanaAgentkitPlguin } from "@elizaos/plugin-solana-agentkit";
 import { autonomePlugin } from "@elizaos/plugin-autonome";
 import { storyPlugin } from "@elizaos/plugin-story";
 import { suiPlugin } from "@elizaos/plugin-sui";
+import { borkPlugin } from "@elizaos/plugin-bork";
 import { TEEMode, teePlugin } from "@elizaos/plugin-tee";
 import { teeLogPlugin } from "@elizaos/plugin-tee-log";
 import { teeMarlinPlugin } from "@elizaos/plugin-tee-marlin";
@@ -102,7 +102,6 @@ import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
 import yargs from "yargs";
-import {dominosPlugin} from "@elizaos/plugin-dominos";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -424,6 +423,11 @@ export function getTokenForProvider(
                 character.settings?.secrets?.VENICE_API_KEY ||
                 settings.VENICE_API_KEY
             );
+        case ModelProviderName.ATOMA:
+            return (
+                character.settings?.secrets?.ATOMASDK_BEARER_AUTH ||
+                settings.ATOMASDK_BEARER_AUTH
+            );
         case ModelProviderName.AKASH_CHAT_API:
             return (
                 character.settings?.secrets?.AKASH_CHAT_API_KEY ||
@@ -708,6 +712,7 @@ export async function createAgent(
         character,
         // character.plugins are handled when clients are added
         plugins: [
+            borkPlugin,
             bootstrapPlugin,
             getSecret(character, "CONFLUX_CORE_PRIVATE_KEY")
                 ? confluxPlugin
