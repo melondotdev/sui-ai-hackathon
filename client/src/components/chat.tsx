@@ -39,7 +39,7 @@ export default function Page({ agentId }: { agentId: UUID }) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
-
+    
     const queryClient = useQueryClient();
 
     const getMessageVariant = (role: string) =>

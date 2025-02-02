@@ -1,15 +1,19 @@
 import { ActionResponse } from "./types.ts";
 const jsonBlockPattern = /```json\n([\s\S]*?)\n```/;
 
-export const messageCompletionFooter = `\nResponse format should be formatted in a JSON block like this:
+export const messageCompletionFooter = `
+Your response must be formatted as a JSON block exactly as shown below.
+IMPORTANT: The "action" field must be one of [RESPOND], [IGNORE], or [STOP] and must not be empty.
 \`\`\`json
 { "user": "{{agentName}}", "text": "string", "action": "string" }
-\`\`\``;
+\`\`\`
+`;
 
-export const shouldRespondFooter = `The available options are [RESPOND], [IGNORE], or [STOP]. Choose the most appropriate option.
-If {{agentName}} is talking too much, you can choose [IGNORE]
-
-Your response must include one of the options.`;
+export const shouldRespondFooter = `
+The available options are [RESPOND], [IGNORE], or [STOP]. Choose the most appropriate option.
+Do not leave the "action" field empty if the request includes the word "action" or set to "none". If unsure, default to [RESPOND].
+Your response must include one of the options.
+`;
 
 export const parseShouldRespondFromText = (
     text: string
