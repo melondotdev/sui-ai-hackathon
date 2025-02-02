@@ -1,0 +1,308 @@
+[
+  {
+    coinType: '0x73b5e37cbddcef49d14e0b8407d6a128004f416a861fdf3f2f8391d33e75be2b::flc::FLC',
+    coinName: 'FlorLovecoin',
+    coinSymbol: 'FLC',
+    balance: 80085,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0x4cf08813756dfa7519cb480a1a1a3472b5b4ec067592a8bee0f826808d218158::tardi::TARDI',
+    coinName: 'Tardi',
+    coinSymbol: 'TARDI',
+    balance: 24.11,
+    balanceUsd: 0.25577570564168434,
+    decimals: 9,
+    coinPrice: 0.010608697869833443
+  },
+  {
+    coinType: '0xa99b8952d4f7d947ea77fe0ecdcc9e5fc0bcab2841d6e2a5aa00c3044e5544b5::navx::NAVX',
+    coinName: 'NAVX Token',
+    coinSymbol: 'NAVX',
+    balance: 0.523306397,
+    balanceUsd: 0.053885906311884,
+    decimals: 9,
+    coinPrice: 0.102972
+  },
+  {
+    coinType: '0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP',
+    coinName: 'DeepBook Token',
+    coinSymbol: 'DEEP',
+    balance: 1,
+    balanceUsd: 0.277468,
+    decimals: 6,
+    coinPrice: 0.277468
+  },
+  {
+    coinType: '0xe0fbaffa16409259e431b3e1ff97bf6129641945b42e5e735c99aeda73a595ac::suiyan::SUIYAN',
+    coinName: 'Super Suiyan',
+    coinSymbol: 'SUIYAN',
+    balance: 800,
+    balanceUsd: 0.07584,
+    decimals: 6,
+    coinPrice: 0.0000948
+  },
+  {
+    coinType: '0x3b68324b392cee9cd28eba82df39860b6b220dc89bdd9b21f675d23d6b7416f1::kdx::KDX',
+    coinName: 'KDX',
+    coinSymbol: 'KDX',
+    balance: 2.197792,
+    balanceUsd: 0.5285202749986637,
+    decimals: 6,
+    coinPrice: 0.24047784094157396
+  },
+  {
+    coinType: '0x2f3019623a784bc82f0610a5dddf822112c6fdc3dd8db964c59e8531186dae84::NaviReward::NAVIREWARD',
+    coinName: 'rwdnav.cc',
+    coinSymbol: '$ rwdnav.cc - NAVI Reward',
+    balance: 10000,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0x4b6d48afff2948c3ccc67191cf0ef175637472b007c1a8601fa18e16e236909c::octo::OCTO',
+    coinName: 'Oscar The Octopus',
+    coinSymbol: 'OCTO',
+    balance: 22222,
+    balanceUsd: 0.5052257292337111,
+    decimals: 6,
+    coinPrice: 0.000022735385169368695
+  },
+  {
+    coinType: '0x1846224baa1b496b02fd32fd4c94f4a9dcd5cd084dc68637609cccbf78b69d8e::gg::GG',
+    coinName: 'GamerGold',
+    coinSymbol: 'GG',
+    balance: 100000,
+    balanceUsd: 0.0596255214814431,
+    decimals: 9,
+    coinPrice: 5.96255214814431e-7
+  },
+  {
+    coinType: '0x46fbe54691b27d7abd2c9e5a01088913531f241b98f3c2351f8215e45cc17a4c::times::TIMES',
+    coinName: 'TIMES',
+    coinSymbol: '$TIMES',
+    balance: 107.5,
+    balanceUsd: 0.797489825,
+    decimals: 5,
+    coinPrice: 0.00741851
+  },
+  {
+    coinType: '0xc074ccc8829e88e267ac1ad1d9197e15c5265c1b847411f78e8f05e12c77570b::blub::BLUB',
+    coinName: 'BLUB v2 (complete bridge: blubv2.com)',
+    coinSymbol: 'BLUB',
+    balance: 10000,
+    balanceUsd: null,
+    decimals: 2,
+    coinPrice: null
+  },
+  {
+    coinType: '0x76cb819b01abed502bee8a702b4c2d547532c12f25001c9dea795a5e631c26f1::fud::FUD',
+    coinName: 'FUD',
+    coinSymbol: 'FUD',
+    balance: 101109.406,
+    balanceUsd: 0.018184425559694,
+    decimals: 5,
+    coinPrice: 1.79849e-7
+  },
+  {
+    coinType: '0xda4e4ed5cd2351572b31338f5798bdd4116f8ff6c26a11f3030484a79025b901::NaviReward::NAVIREWARD',
+    coinName: 'rwnav.com',
+    coinSymbol: '$ rwnav.com - Navi Reward Token',
+    balance: 8091,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0xf22da9a24ad027cccb5f2d496cbe91de953d363513db08a3a734d361c7c17503::LOFI::LOFI',
+    coinName: 'LOFI',
+    coinSymbol: 'LOFI',
+    balance: 34.5,
+    balanceUsd: 2.9832807527217398,
+    decimals: 9,
+    coinPrice: 0.08647190587599246
+  },
+  {
+    coinType: '0x5145494a5f5100e645e4b0aa950fa6b68f614e8c59e17bc5ded3495123a79178::ns::NS',
+    coinName: 'SuiNS Token',
+    coinSymbol: 'NS',
+    balance: 4.5,
+    balanceUsd: 1.0682775,
+    decimals: 6,
+    coinPrice: 0.237395
+  },
+  {
+    coinType: '0xda1644f58a955833a15abae24f8cc65b5bd8152ce013fde8be0a6a3dcf51fe36::token::TOKEN',
+    coinName: 'Huski Token',
+    coinSymbol: 'HUSKI',
+    balance: 1000,
+    balanceUsd: 0.00044183941316308347,
+    decimals: 0,
+    coinPrice: 4.4183941316308347e-7
+  },
+  {
+    coinType: '0x57e93adcecd97fc8b30fc6f124be185f292b648e324773d8fbe6650e8274790f::aida::AIDA',
+    coinName: 'Aida',
+    coinSymbol: 'AIDA',
+    balance: 70,
+    balanceUsd: 0.07946056093971991,
+    decimals: 6,
+    coinPrice: 0.0011351508705674273
+  },
+  {
+    coinType: '0x2::sui::SUI',
+    coinName: 'Sui',
+    coinSymbol: 'SUI',
+    balance: 0.75761114,
+    balanceUsd: 3.1289340082,
+    decimals: 9,
+    coinPrice: 4.13
+  },
+  {
+    coinType: '0x9a7ac0d8df8f8911f5b8a5e645b4d6416943efab3a1a32e59573706e2a971885::blub::BLUB',
+    coinName: 'BLUB v2 (bridge at: blubv2.com)',
+    coinSymbol: 'BLUB',
+    balance: 10000,
+    balanceUsd: null,
+    decimals: 2,
+    coinPrice: null
+  },
+  {
+    coinType: '0xc54428edfa96e8d503b143f7725894a33cf455fe3dfb91d36462ed8461ede7e0::NavxReward::NAVXREWARD',
+    coinName: 'navxfi.cc',
+    coinSymbol: '$ navxfi.cc - NAVI Reward',
+    balance: 6193.2,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0xc1235c4ec2b64731dc4bf6157d8606eb76690e2d57ef907a35bdf4d197838ab6::rgpl::RGPL',
+    coinName: 'RUGPULL',
+    coinSymbol: 'RGPL',
+    balance: 19,
+    balanceUsd: 5.804901558071055e-7,
+    decimals: 9,
+    coinPrice: 3.0552113463531866e-8
+  },
+  {
+    coinType: '0xae00e078a46616bf6e1e6fb673d18dcd2aa31319a07c9bc92f6063363f597b4e::AXOL::AXOL',
+    coinName: 'AXOL',
+    coinSymbol: 'AXOL',
+    balance: 15,
+    balanceUsd: 0.50997375,
+    decimals: 9,
+    coinPrice: 0.03399825
+  },
+  {
+    coinType: '0xe5b9a10d706ac6416fbc8e0d06a268474ebfbef01ee0b696e76137432f98d125::suisnails_dao_token::SUISNAILS_DAO_TOKEN',
+    coinName: 'Sui Snails Dao Token',
+    coinSymbol: 'SNAIL',
+    balance: 5000,
+    balanceUsd: null,
+    decimals: 6,
+    coinPrice: null
+  },
+  {
+    coinType: '0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS',
+    coinName: 'Cetus Token',
+    coinSymbol: 'CETUS',
+    balance: 0.347916055,
+    balanceUsd: 0.077656603056275,
+    decimals: 9,
+    coinPrice: 0.223205
+  },
+  {
+    coinType: '0x18060ed4afb1d6f1e1f156789fb2ec319ace6790b2136761a69fa843d475158a::lorc::LORC',
+    coinName: 'Loricoin',
+    coinSymbol: 'LORC',
+    balance: 800850,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0xc26c8e21a266fa37beb82d3799f520372f5f67f638fa96374dbc68c4089d15de::blub::BLUB',
+    coinName: 'BLUB v2 (complete bridge: blubv2.com)',
+    coinSymbol: 'BLUB',
+    balance: 10000,
+    balanceUsd: null,
+    decimals: 2,
+    coinPrice: null
+  },
+  {
+    coinType: '0x17b7ff743a8ab58b99043f8fb457995c471fbfb75a4eebc753bd6232d68fdc40::deep::DEEP',
+    coinName: 'DEEP v2 (complete bridge: deepv2.com)',
+    coinSymbol: 'DEEP',
+    balance: 3.375338,
+    balanceUsd: null,
+    decimals: 6,
+    coinPrice: null
+  },
+  {
+    coinType: '0xe27e48819c638aa0b08424e5cb9550b010d565f82cae94353fa52ee83ffa4189::ScallopReward::SCALLOPREWARD',
+    coinName: 'rwsca.net',
+    coinSymbol: '$ rwsca.net - Scallop Reward Token',
+    balance: 10000,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0x16ab6a14d76a90328a6b04f06b0a0ce952847017023624e0c37bf8aa314c39ba::shr::SHR',
+    coinName: 'SroomAI DAO',
+    coinSymbol: 'SHR0',
+    balance: 14,
+    balanceUsd: 0.028646031163665854,
+    decimals: 9,
+    coinPrice: 0.0020461450831189896
+  },
+  {
+    coinType: '0xb1b8336fcfc01c1360c6f78c6c8084887eba8595c77901c4b13d9c7e217a3618::NaviReward::NAVIREWARD',
+    coinName: 'rwnav.com',
+    coinSymbol: '$ rwnav.com - Navi Reward Token',
+    balance: 7926,
+    balanceUsd: null,
+    decimals: 9,
+    coinPrice: null
+  },
+  {
+    coinType: '0x83556891f4a0f233ce7b05cfe7f957d4020492a34f5405b2cb9377d060bef4bf::spring_sui::SPRING_SUI',
+    coinName: 'Spring SUI',
+    coinSymbol: 'sSUI',
+    balance: 0.055871593,
+    balanceUsd: 0.23298454281,
+    decimals: 9,
+    coinPrice: 4.17
+  },
+  {
+    coinType: '0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK',
+    coinName: 'Bucket USD',
+    coinSymbol: 'BUCK',
+    balance: 0.023782682,
+    balanceUsd: 0.02373131140688,
+    decimals: 9,
+    coinPrice: 0.99784
+  },
+  {
+    coinType: '0xbc858cb910b9914bee64fff0f9b38855355a040c49155a17b265d9086d256545::but::BUT',
+    coinName: 'Bucket Token',
+    coinSymbol: 'BUT',
+    balance: 1.318002586,
+    balanceUsd: 0.02491637502409635,
+    decimals: 9,
+    coinPrice: 0.018904648055141488
+  },
+  {
+    coinType: '0xd1fc206d1fdd71c6da714ec8be4fd10a0896b95be2f2af36a9d4e2dcb8492a29::kingcobra::KINGCOBRA',
+    coinName: 'KingCobra',
+    coinSymbol: 'KingCobra',
+    balance: 100,
+    balanceUsd: 0.000011602974262980685,
+    decimals: 9,
+    coinPrice: 1.1602974262980685e-7
+  }
+]
