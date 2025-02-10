@@ -88,7 +88,7 @@ export default {
     // Save the enriched data to state and return via callback.
     state.kioskInfo = kioskData;
     callback?.({
-      text: JSON.stringify(kioskData, null, 2),
+      text: `Fetched NFTs:`,
       content: { kioskInfo: kioskData },
     });
     return true;

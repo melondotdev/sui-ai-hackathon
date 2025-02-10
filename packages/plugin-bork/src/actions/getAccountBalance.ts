@@ -108,9 +108,8 @@ export default {
 
       // Final response including only balances
       if (callback) {
-        const formattedResponse = JSON.stringify({ balances }, null, 2);
         callback({
-          text: `Fetched balances for wallet ${walletAddress}:\n\n${formattedResponse}`,
+          text: `Fetched balances for wallet ${walletAddress}:`,
           content: { balances },
         });
       }

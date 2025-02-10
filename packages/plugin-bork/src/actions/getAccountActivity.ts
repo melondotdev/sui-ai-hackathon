@@ -198,7 +198,7 @@ export default {
 
       // Fetch token prices
       const tokenPrices = await fetchTokenPrices(uniqueTokens);
-
+      
       // Attach token prices to transactions
       transactions.forEach((tx) => {
         tx.prices = tx.coinType.map((token) => tokenPrices[token] || "N/A");
@@ -206,9 +206,8 @@ export default {
 
       // Final response including transactions and token prices
       if (callback) {
-        const formattedResponse = JSON.stringify({ transactions }, null, 2);
         callback({
-          text: `Fetched transactions, balances, and token prices for wallet ${walletAddress}:\n\n${formattedResponse}`,
+          text: `Fetched transactions, balances, and token prices for wallet ${walletAddress}`,
           content: { transactions },
         });
       }
