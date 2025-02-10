@@ -3,15 +3,15 @@ const jsonBlockPattern = /```json\n([\s\S]*?)\n```/;
 
 export const messageCompletionFooter = `
 Your response must be formatted as a JSON block exactly as shown below.
-IMPORTANT: The "action" field must be one of [RESPOND], [IGNORE], or [STOP] and must not be empty.
+IMPORTANT: The "action" field must not be empty.
 \`\`\`json
 { "user": "{{agentName}}", "text": "string", "action": "string" }
 \`\`\`
 `;
 
 export const shouldRespondFooter = `
-The available options are [RESPOND], [IGNORE], or [STOP]. Choose the most appropriate option.
-Do not leave the "action" field empty if the request includes the word "action" or set to "none". If unsure, default to [RESPOND].
+Choose the most appropriate option.
+Do not leave the "action" field empty if the request includes the word "action" or set to "none".
 Your response must include one of the options.
 `;
 

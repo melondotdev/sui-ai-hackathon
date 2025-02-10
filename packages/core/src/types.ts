@@ -596,7 +596,7 @@ export type Media = {
 
     /** Text content */
     text: string;
-
+    
     /** Content type */
     contentType?: string;
 };
