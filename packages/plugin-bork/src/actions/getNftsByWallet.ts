@@ -10,7 +10,6 @@ import {
 import { kioskProvider } from "../providers/kiosk";
 import {
   fetchLatestPrice,
-  fetchFloorPrice,
   fetchMetadataForNFTs,
 } from "../utils";
 
@@ -57,18 +56,7 @@ export default {
         collectionIds.add(item.collectionId);
       }
     }
-
-    // Fetch and assign floor prices for each collection.
-    const floorPrices: { [collectionId: string]: number | null } = {};
-    for (const collectionId of collectionIds) {
-      floorPrices[collectionId] = await fetchFloorPrice(collectionId);
-    }
-    for (const kiosk of kioskData.kiosks) {
-      for (const item of kiosk.items) {
-        item.floorPrice = floorPrices[item.collectionId] ?? null;
-      }
-    }
-
+    
     // Collect all NFT object IDs and fetch their metadata.
     const objectIds: string[] = [];
     for (const kiosk of kioskData.kiosks) {
@@ -84,11 +72,11 @@ export default {
         }
       }
     }
-
+    
     // Save the enriched data to state and return via callback.
     state.kioskInfo = kioskData;
     callback?.({
-      text: `Fetched NFTs:`,
+      text: `Fetched NFTs: ${JSON.stringify(kioskData, null, 2)}`,
       content: { kioskInfo: kioskData },
     });
     return true;
